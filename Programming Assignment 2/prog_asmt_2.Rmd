@@ -1,0 +1,49 @@
+# Analysis of Wikipedia Page Navigation
+## Data Source
+I created my own dataset for this assignment. It describes visit-plan for a team of
+customer representatives for doctor visits. Here is what the data format looks like:
+
+1. REP -> Customer Rep. ID
+2. DOC -> Doctor ID
+3. PLAN_CALLS -> No. of visits planned
+
+The data and R code can be downloaded at my [github site](https://github.com/skarmach/Coursera-Data-Visualization-Course/tree/master/Programming%20Assignment%202).
+
+```{r message=F, warning=F, echo=F, fig.width=10, fig.height=10}
+library(dplyr)
+library(tidyr)
+library(visNetwork)
+library(igraph)
+setwd("C:/Users/karmacha/Documents/books/Data Analysis/Coursera - Data Visualization/Programming Assignment 2/")
+rawdata <- read.csv("rep_doc_visit_plans_2016Q2.csv")
+
+data <- rawdata
+
+reps <- data %>%
+  select(REP) %>%
+  distinct() %>%
+  rename(title = REP) %>%
+  mutate(group = "Rep")
+
+reps$id <- 1:nrow(reps)
+reps$color <- rainbow(15)[reps$id]
+docs <- data %>%
+  select(DOC) %>%
+  distinct() %>%
+  rename(id = DOC) %>%
+  mutate(title = id, group = "Doc",color='#FF0000FF')
+
+nodes <- rbind(reps, docs)
+
+edges <- data %>%
+  select(REP, DOC, PLAN_CALLS) %>%
+  rename(from = REP, to = DOC, size = PLAN_CALLS)
+
+net <- graph_from_data_frame(d=edges, vertices=nodes, directed=F)
+V(net)$size <- ifelse(V(net)$group == "Rep", 6, 2)
+V(net)$label <- ifelse(V(net)$group == "Rep", V(net)$id, NA)
+E(net)$color <- rainbow(15)[edges$size]
+plot(net, main="Customer Rep. Team's Doctor visit plan")
+legend(x=0.9, y=1.0, paste(reps$id,'-',reps$title), fill=reps$color, title="rep id",cex=.7,pt.cex=1)
+legend(x=1.1, y=0.4, sort(unique(edges$size)), fill=rainbow(15), title="num visits",cex=.7,pt.cex=1)
+```
